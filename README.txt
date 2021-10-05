@@ -1,0 +1,1 @@
+a very small scale ESN, mostly created to understand how they work.
