@@ -1,7 +1,9 @@
 import numpy as numpy
+import decimal
 
 class TinyESN():
-    def __init__(self, K: int, N: int, L: int, f):
+    def __init__(self, K: int, N: int, L: int, f): #note: default topology is fully connected
+        #Matrix shapes are taken from [1]
         self.u = numpy.random.rand(N, 1)
         self.x = numpy.zeros((N, 1), dtype=numpy.float32)
         self.v = numpy.zeros((N, 1), dtype=numpy.float32)
@@ -16,6 +18,76 @@ class TinyESN():
         self.outputs = None
         self.timestep = None
         return
+    
+    '''sets the reservoir topology to one of standard ones, as described in [2]'''
+    
+    '''Question: is connectivity vs architecture: if there are two esns with the same architecture and size, are they automatically the same connectivity? Or is it a case of the architecture describes _which_ nodes can have things happen to them and then the connectivity is how many of those nodes are actually connected?'''
+    def init_ring(self):
+        placeholder = numpy.zeros((self.x.size, self.x.size))
+        for i in range(self.x.size):
+            coordinates = [(i, i, i), ((i-1)%self.x.size, i, (i+1)%self.x.size)]
+            placeholder[tuple(coordinates)] = 1
+        self.W = numpy.multiply(self.W, placeholder)
+        # "Each node has a single self-connection and a weighted connection to each of its neighbours to its left and right" ([2])
+        return
+    
+    def init_latice(self, rows):
+        #TODO: test
+        if self.x.size % rows == 0:
+            raise ValueError("this would not let you form a grid")
+        cols = self.x.size / rows
+        s = self.x.size
+        placeholder = numpy.zeros(s, s)
+        for i in range(self.x.size):
+            bot = max(i-(rows+1), 0) - 1 # this is ugly as fuck but is the best way i can think of doing it
+            #this isn't gonna work, i need to take a break and come back to it
+            top = min(i+(rows+1), s) - 1
+            coordinates = [(i, i, i, i, i, i, i, i, i), 
+                            (bot-1, bot, bot+1, 
+                            max(i-1, 0), i, min(i+1, s), 
+                            top-min(i, 1), top, top+1)]
+            placeholder[tuple(coordinates)] = 1
+        
+        self.W = numpy.multiply(self.W, placeholder)
+        # "With this topology, we define a square grid of neurons each connected to its nearest neighbours (using its Moore neighbourhood, as commonly used in cellular automata). Each non-perimetre node has eight connections and one self-connection, resulting with each node having a maximum of nine adaptable weights in W" ([2])
+        return
+
+    def init_torus(self, rows):
+        #TODO: test
+        if self.x.size % rows == 0:
+            raise ValueError("this would not let you form a grid")
+        cols = self.x.size / rows
+        s = self.x.size
+        placeholder = numpy.zeros(s, s)
+        for i in range(self.x.size):
+            bot = (i - rows)%s # this is ugly as fuck but is the best way i can think of doing it
+            top = (i + rows)%s
+            coordinates = [(i, i, i, i, i, i, i, i, i), 
+                            (bot-1, bot, bot+1, 
+                            (i-1)%s, i, i+1%s, 
+                            top-1, top, top+1)]
+            placeholder[tuple(coordinates)] = 1
+        
+        self.W = numpy.multiply(self.W, placeholder)
+        #"The torus topology is a special case of the latice where the perimetre nodes are connected to give periodic boundary conditions. Each node has nine adaptable weights in W" ([2])
+        return
+
+    def init_complete(self):
+
+        #"The fully connected network has no topological constraints  and has the maximum number of adaptable weights: the weight matrix W is fully populated." ([2])
+        #As this is the default setting for the generation anyway, simply need to return
+        return
+    
+    def init_sparse(self, connectivity: decimal.Decimal):
+        return
+    '''Checks to see whether the ESN has the Echo State property [1]'''
+    def has_echo_state(self):
+        #calculate spectral radius
+        #check the "largest singular value"
+        return False
+
+
+    '''updates the reservoir state and outputs according to the non-instantaneous equation described in [3], adapted from the initial definition from [1]'''
 
     def increment_timestep_no_fb_discretised(self):
         #currently using discretised ESN equations for a physical system (Stepney, 2021)
@@ -40,6 +112,10 @@ class TinyESN():
         print(self.v)
         return
 
+
+    '''trains the matrix using the matrix pseudoinverse method described in [4]
+    
+    Note: [4] describes this method as "it is expensive memory-wise for large design matrices [self.x]". That being said, given the scale of this ESN, it is perhaps the most straightforward option, as it is very simple to understand.'''
     def train_pseudoinverse(self, training_set):
         #TODO: turn M into the correct shape
         for data in training_set:
@@ -62,11 +138,16 @@ class TinyESN():
                 self.M_train = numpy.vstack((self.M_train, y))
                 self.D_train = numpy.vstack((self.D_train, training_set[data]))
                 self.outputs = numpy.vstack((self.outputs, self.v))
-                # so what i think is somehow going wrong here is that 
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
-                self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)) #Not sure if this is OK - may be worth bringing up
+                self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)) #Note: the output matrix derived with this method gives a transposition of the weight matrix described in [1], hence the transposition here
         return
+
+    '''Trains the ESN using linear regression using the method described in [4].'''
+
+    # def train_linear_regression(self, training_set, regularisation_coefficient):
+    #     return
     
+    '''tests the ESN '''
     def test(self, testing_set):
         self.u = list(testing_set.keys())[0]
         self.increment_timestep_no_fb_discretised()
@@ -79,7 +160,17 @@ class TinyESN():
 
 
 
+'''
+Bibliography:
 
+[1] Jaeger, Herbert. n.d. “The ‘echo State’ Approach to Analysing and Training Recurrent Neural Networks – with an Erratum note1.” Accessed October 5, 2021. http://www.faculty.jacobs-university.de/hjaeger/pubs/EchoStatesTechRep.pdf.
+
+[2] Dale, Matthew, Simon O’Keefe, Angelika Sebald, Susan Stepney, and Martin A. Trefzer. 2021. “Reservoir Computing Quality: Connectivity and Topology.” Natural Computing 20 (2): 205–16.
+
+[3] Stepney, Susan. n.d. “Non-Instantaneous Information Transfer in Physical Reservoir Computing.
+
+[4] Montavon, Grégoire, Geneviève B. Orr, and Klaus-Robert Müller, eds. 2012. Neural Networks: Tricks of the Trade: Second Edition. Springer, Berlin, Heidelberg.
+'''
             
 
 
