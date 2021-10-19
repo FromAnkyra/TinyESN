@@ -2,13 +2,23 @@ import numpy as numpy
 import decimal
 
 class TinyESN():
-    def __init__(self, K: int, N: int, L: int, f): #note: default topology is fully connected
+    def __init__(self, K: int, N: int, L: int, f=numpy.tanh, mode="discretised", feedback=False, topology="random", connectivity=0.1): #note: default topology is fully connected
         #Matrix shapes are taken from [1]
-        self.u = numpy.random.rand(N, 1)
+        modes = ["discretised", "instantaneous"]
+        if mode not in modes:
+            raise ValueError("please set mode to discretised or instantaneous")
+        self.mode = mode
+        topologies = ["random", "ring", "lattice", "torus", "fully_connected"]
+        if topology not in topologies:
+            raise ValueError("please set a valid topology")
+        self.topology = topology
+        self.connectivity = connectivity #this only comes into play if the topology is set to random
+        self.feedback = feedback
+        self.u = numpy.random.rand(K, 1)
         self.x = numpy.zeros((N, 1), dtype=numpy.float32)
-        self.v = numpy.zeros((N, 1), dtype=numpy.float32)
+        self.v = numpy.zeros((L, 1), dtype=numpy.float32)
         self.Wu = numpy.random.rand(N, K)
-        self.W = numpy.random.rand(N, N)
+        self.W = numpy.random.zeros((N, N), dtype=numpy.float32)
         self.Wv = numpy.random.rand(L, N)
         self.Wback = numpy.random.rand(N, L)
         self.func = numpy.vectorize(f)
@@ -17,6 +27,36 @@ class TinyESN():
         self.D_train = None
         self.outputs = None
         self.timestep = None
+        self.set_topology()
+        return
+
+    def increment_timestep(self, data):
+        if self.mode == "discretised" and self.feedback == True:
+            self.increment_timestep_fb_discretised(data)
+        elif self.mode == "discretised" and self.feedback == False:
+            self.increment_timestep_no_fb_discretised(data)
+        elif self.mode == "instantaneous" and self.feedback == True:
+            self.increment_fb_inst(data)
+        else:
+            self.increment_timestep_no_fb_inst(data)
+        return
+
+    def set_topology(self):
+        if self.topology == "random":
+            self.init_random()
+        elif self.topology == "ring":
+            self.init_ring()
+        elif self.topology == "lattice":
+            self.init_lattice() #TODO: this is mildly broken
+        elif self.topology == "torus":
+            self.init_torus() #TODO: this is mildy broken
+        elif self.topology == "fully_connected":
+            self.init_complete()
+        return
+    
+    def init_random(self):
+        #sets topoplogy according randomly 
+        
         return
     
     '''sets the reservoir topology to one of standard ones, as described in [2]'''
@@ -27,11 +67,11 @@ class TinyESN():
         for i in range(self.x.size):
             coordinates = [(i, i, i), ((i-1)%self.x.size, i, (i+1)%self.x.size)]
             placeholder[tuple(coordinates)] = 1
-        self.W = numpy.multiply(self.W, placeholder)
+        self.W = placeholder
         # "Each node has a single self-connection and a weighted connection to each of its neighbours to its left and right" ([2])
         return
     
-    def init_latice(self, rows):
+    def init_lattice(self, rows):
         #TODO: test
         if self.x.size % rows == 0:
             raise ValueError("this would not let you form a grid")
@@ -48,7 +88,7 @@ class TinyESN():
                             top-min(i, 1), top, top+1)]
             placeholder[tuple(coordinates)] = 1
         
-        self.W = numpy.multiply(self.W, placeholder)
+        self.W = placeholder
         # "With this topology, we define a square grid of neurons each connected to its nearest neighbours (using its Moore neighbourhood, as commonly used in cellular automata). Each non-perimetre node has eight connections and one self-connection, resulting with each node having a maximum of nine adaptable weights in W" ([2])
         return
 
@@ -68,7 +108,7 @@ class TinyESN():
                             top-1, top, top+1)]
             placeholder[tuple(coordinates)] = 1
         
-        self.W = numpy.multiply(self.W, placeholder)
+        self.W = placeholder
         #"The torus topology is a special case of the latice where the perimetre nodes are connected to give periodic boundary conditions. Each node has nine adaptable weights in W" ([2])
         return
 
@@ -80,29 +120,43 @@ class TinyESN():
     
     def init_sparse(self, connectivity: decimal.Decimal):
         return
+
     '''Checks to see whether the ESN has the Echo State property [1]'''
     def has_echo_state(self):
         #calculate spectral radius
         #check the "largest singular value"
         return False
 
-
+    '''updates the reservoir according  to the equations laid out in [1]'''
+    def increment_timestep_no_fb_inst(self, input):
+        self.u = input
+        self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
+        self.v = self.func(numpy.dot(self.Wv, self.x))  
+        return
+    
+    def increment_fb_inst(self, input):
+        self.u = input
+        self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u) + numpy.dot(self.Wback, self.v))
+        self.v = self.func(numpy.dot(self.x, self.Wv))  
+    
     '''updates the reservoir state and outputs according to the non-instantaneous equation described in [3], adapted from the initial definition from [1]'''
-
-    def increment_timestep_no_fb_discretised(self):
+    
+    def increment_timestep_no_fb_discretised(self, input):
         #currently using discretised ESN equations for a physical system (Stepney, 2021)
         new_x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
         # print(f"Wv: {self.Wv.shape},\nx: {self.x.shape}")
         self.v = self.func(numpy.dot(self.Wv, self.x))  
         self.x = new_x
+        self.u = input
         self.t += 1
         return
 
-    def increment_timestep_fb_discretised(self):
+    def increment_timestep_fb_discretised(self, input):
         # incorporates feedback of the output
         new_x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u) + numpy.dot(self.Wback, self.v))
         self.v = self.func(numpy.dot(self.x, self.Wv))  
         self.x = new_x
+        self.u = input
         self.t += 1
         return
     
@@ -119,9 +173,7 @@ class TinyESN():
     def train_pseudoinverse(self, training_set):
         #TODO: turn M into the correct shape
         for data in training_set:
-            self.u = data
-            # print(self.t)
-            self.increment_timestep_no_fb_discretised()
+            self.increment_timestep(data)
             if self.t <= 10:
                 pass
             elif self.M_train is None:
@@ -149,12 +201,10 @@ class TinyESN():
     
     '''tests the ESN '''
     def test(self, testing_set):
-        self.u = list(testing_set.keys())[0]
-        self.increment_timestep_no_fb_discretised()
+        self.increment_timestep(list(testing_set.keys())[0])
         self.outputs = self.v
         for data in list(testing_set.keys())[1:]:
-            self.u = data
-            self.increment_timestep_no_fb_discretised()
+            self.increment_timestep(data)
             self.outputs = numpy.vstack((self.outputs, self.v))
         return 
 
