@@ -55,8 +55,13 @@ class TinyESN():
         return
     
     def init_random(self):
-        #sets topoplogy according randomly 
-        
+        #sets topology according randomly 
+        size = self.x.size
+        no_of_weights = int(self.connectivity * (size**2))
+        weights = numpy.random.uniform(low=-1.0, high=1.0, size=no_of_weights)
+        placeholder = numpy.append(numpy.zeros(size**2 - no_of_weights), weights)
+        placeholder = numpy.random.permutation(placeholder).reshape((size, size))
+        self.W = placeholder
         return
     
     '''sets the reservoir topology to one of standard ones, as described in [2]'''
@@ -113,9 +118,8 @@ class TinyESN():
         return
 
     def init_complete(self):
-
-        #"The fully connected network has no topological constraints  and has the maximum number of adaptable weights: the weight matrix W is fully populated." ([2])
-        #As this is the default setting for the generation anyway, simply need to return
+        placeholder = numpy.ones_like(self.W)
+        self.W = placeholder
         return
     
     def init_sparse(self, connectivity: decimal.Decimal):
