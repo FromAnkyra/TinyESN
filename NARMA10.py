@@ -82,7 +82,7 @@ class Narma10:
         """Generate a random input."""
         return numpy.random.random_sample()/2
     
-    def create_training_set_inst(self, size):
+    def create_training_set(self, size):
         """
         Create a set of NARMA10 inputs and outputs.
         
