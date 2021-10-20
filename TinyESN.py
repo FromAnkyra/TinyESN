@@ -1,5 +1,6 @@
 import numpy as numpy
 import decimal
+import igraph
 
 class TinyESN():
     """
@@ -94,28 +95,33 @@ class TinyESN():
     
     def _init_lattice(self):
         """
-        Initialise the ESN with a lattice topology. 
+        Initialise the ESN with a lattice topology. ]
 
-        For this to work, the number of nodes N must be a square number, or else the function will return an error. 
+        For this to work, the number of nodes N must be a square number, or else the function will return an error.
 
         From [2]: With this topology, we define a square grid of neurons each connected to its nearest neighbours (using its Moore neighbourhood, as commonly used in cellular automata). Each non-perimetre node has eight connections and one self-connection, resulting with each node having a maximum of nine adaptable weights in W.
 
         This topology aims to imitate the layout of physical materia.
         """
-        #TODO: test
-        if self.x.size % rows == 0:
-            raise ValueError("this would not let you form a grid")
-        cols = self.x.size / rows
+        if numpy.sqrt(self.x.size) != int(numpy.sqrt(self.x.size)):
+            raise ValueError("Can only form a lattice if nodes can form a square.")
         s = self.x.size
-        placeholder = numpy.zeros(s, s)
-        for i in range(self.x.size):
-            bot = max(i-(rows+1), 0) - 1 # this is ugly as fuck but is the best way i can think of doing it
-            #this isn't gonna work, i need to take a break and come back to it
-            top = min(i+(rows+1), s) - 1
-            coordinates = [(i, i, i, i, i, i, i, i, i), 
-                            (bot-1, bot, bot+1, 
-                            max(i-1, 0), i, min(i+1, s), 
-                            top-min(i, 1), top, top+1)]
+        side = int(numpy.sqrt(s))
+        placeholder = numpy.zeros((s, s))
+        edge_big = lambda a, b, c: a if a<c else b
+        edge_small = lambda a, b, c: a if a>=c else b
+        col_count = 0
+        row_count = 1
+        for i in range(s):
+            if col_count == side and row_count!=5:
+                col_count = 0
+                row_count+=1
+            col_count+=1
+            #this awful (affectionate) piece of code is the moore neighbourhood for any given node i
+            #i pity the person to try and modify this to work as a rectangle (i am so sorry)
+            coordinates = [(i, edge_big(i+side, i, s), edge_big(i+1, i, (side*row_count)), edge_big((i+1+side), i, min(s, (side*(row_count+1)))), edge_small(i-side, i, 0), edge_small(i-1, i, side*(row_count-1)), edge_small(i-side-1, i, max(0, side*(row_count-2))), edge_small(edge_big(i-side+1, i, side*(row_count-1)), i, 0), edge_big(edge_small(i+side-1, i, side*(row_count)),i,s)), (i, i, i, i, i, i, i, i, i)]
+            # print(edge_big(i-side+1, i, side*(row_count-1)))
+            # print(coordinates)
             placeholder[tuple(coordinates)] = 1
         
         self.W = placeholder
@@ -206,9 +212,16 @@ class TinyESN():
 
     def pretty_print(self):
         """Pretty print the reservoir."""
-        print(self.u)
-        print(self.x)
-        print(self.v)
+        g = igraph.Graph.Weighted_Adjacency(self.W, loops=True)
+        if self.topology == "ring":
+            layout = g.layout_circle()
+        elif self.topology == "lattice":
+            layout = g.layout_grid()
+        elif self.topology == "torus":
+            layout = g.layout_sphere()
+        else: 
+            layout = g.layout_kamada_kawai_3d()
+        igraph.plot(g, layout=layout)
         return
 
     def train_pseudoinverse(self, training_set):
@@ -242,7 +255,6 @@ class TinyESN():
                 self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)) #Note: the output matrix derived with this method gives a transposition of the weight matrix described in [1], hence the transposition here
         return
 
-    '''tests the ESN '''
     def test(self, testing_set):
         """
         Test the ESN.
