@@ -199,6 +199,7 @@ class TinyESN():
         self.u = data
         self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
         self.v = self.func(numpy.dot(self.Wv, self.x))  
+        self.t += 1
         return
     
     def _increment_fb_inst(self, data):
@@ -206,6 +207,8 @@ class TinyESN():
         self.u = data
         self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u) + numpy.dot(self.Wback, self.v))
         self.v = self.func(numpy.dot(self.x, self.Wv))  
+        self.t += 1
+        return
     
     def _increment_timestep_no_fb_discretised(self, data):
         """Update the ESN state and ouputs according to the discretised equation described in [3]. Does not take feedback into account."""
