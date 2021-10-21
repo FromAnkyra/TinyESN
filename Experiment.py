@@ -1,37 +1,140 @@
+"""Some sample experiments and operations that you might want to use to test an ESN."""
+import matplotlib.pyplot as plt
+import numpy
 import TinyESN
 import NARMA10
-import numpy as numpy
-from sklearn.metrics import mean_squared_error
 
-# class Experiment():
-#     def __init__(self, N):
-#         self.esn = TinyESN(1, N, 1, numpy.tanh)
-#         self.inputs = Dict()
-
+class Experiment():
+    """Define sample experiments that might be of use when testing an ESN."""
+   
+    def __init__(self):
+        """Initialise the Experiment class."""
+        self.default_params = {"K": 1,
+                                "N": 30,
+                                "L": 1,
+                                "function": numpy.tanh,
+                                "mode": "discretised",
+                                "feedback": False,
+                                "topology": "random",
+                                "connectivity": 0.1,
+                                "input_norm": True}
+        return
     
-#     def train_no_feedback(self):
-#         for row in self.inputs:
-#             self.esn.x = row
-#             self.esn.increment_timestep_no_fb_discretised()
+    def nrmse(self, target_output_set, real_output_set):#any idea why this appears to converge to 1?
+        """Perform the normalised root mean squared error over the target and output sets."""
+        if len(target_output_set) != len(real_output_set):
+            raise ValueError(f"Found input variables with inconstitent numbers of samples [{len(target_output_set)}, {len(real_output_set)}]")
+        output_average = sum(target_output_set)/len(target_output_set)
+        top = 0
+        bottom = 0
+        for i in range(len(target_output_set)):
+            top += (target_output_set[i] - real_output_set[i])**2
+            bottom += (target_output_set[i] - output_average)**2
+        top = top/len(target_output_set)
+        bottom = bottom/len(target_output_set)
+        return float(numpy.sqrt(top/bottom))
 
-#     def train_feedback(self):
-#         for row in self.inputs:
-#             self.esn.x = row
-#             self.esn.increment_timestep_fb_discretised()
+    def show_esn_nrmse(self, params):
+        """
+        Train a given ESN and makes a boxplot of the NRSMEs.
         
-#     def test_feedback(self):
+        params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
+        """
+        training, testing = self.run_many(*params, 500)
+        data = [training, testing]
+        plt.boxplot(data)
+        plt.xticks([1, 2], ["training", "testing"])
+        return
 
-#     def test_no_feedback(self):
+    def compare_esn_nrmses(self, params_1, params_2, name_1="esn 1", name_2="esn 2"):
+        """
+        Train two ESNs and make boxplots of the NMSREs.
+        
+        params_1, params_2: tuple of the parametres for the ESNs to train. (Default param examples can be found in self.default_params).
 
-narma = NARMA10.Narma10()
-data = narma.create_training_set(1000)
-training_set = dict(list(data.items())[len(data)//2:])
-testing_set = dict(list(data.items())[:len(data)//2])
-esn_pseudoinverse = TinyESN.TinyESN(1, 10, 1, numpy.tanh)
-esn_pseudoinverse.train_pseudoinverse(training_set)
-training_mse = mean_squared_error(list(training_set.values())[10:], esn_pseudoinverse.outputs, squared=False)
-esn_pseudoinverse.test(testing_set)
-testing_mse = mean_squared_error(list(testing_set.values()), esn_pseudoinverse.outputs, squared=False)
-print(f"training set: {training_mse}\ntesting set: {testing_mse}")
+        name_1, name2: name given to the ESNs (to use when labelling boxplots)
+        """
+        esn_1_training, esn_1_testing = self.run_many(params_1, 100)
+        esn_2_training, esn_2_testing = self.run_many(params_2, 100)
+        data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
+        plt.boxplot(data)
+        plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
+        return 
 
-#TODO (this afternoon, if i can be arsed: figure out how I want to test this)
+    def show_esn_behaviour(self, params):
+        """
+        Plot the ESN outputs to the target NARMA10 outputs.
+
+        params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
+        """
+        _, axs = plt.subplots(2)
+        narma = NARMA10.Narma10()
+        data = narma.create_training_set(1000)
+        esn = TinyESN.TinyESN(*params)
+        training_set = dict(list(data.items())[(len(data)//2)+10:])
+        testing_set = dict(list(data.items())[:(len(data)//2)-10])
+        esn.train_pseudoinverse(training_set)
+        axs[0].set_title("training")
+        axs[0].plot(list(training_set.values())[10:])
+        axs[0].plot(esn.outputs)
+        esn.test(testing_set)
+        axs[1].set_title("testing")
+        axs[1].plot(list(testing_set.values()))
+        axs[1].plot(esn.outputs)
+        return 
+
+    def compare_esn_behaviour(self, params_1, params_2, name_1="esn 1", name_2="esn 2"):
+        """
+        Plot the outputs of two different ESNs to the targert NARMA10 outputs.
+        
+        params_1, params_2: tuple of the parametres for the ESNs to train. (Default param examples can be found in self.default_params).
+
+        name_1, name2: name given to the ESNs
+        """
+        _, axs = plt.subplots(2)
+        narma = NARMA10.Narma10()
+        data = narma.create_training_set(1000)
+        esn_1 = TinyESN.TinyESN(*params_1)
+        esn_2 = TinyESN.TinyESN(*params_2)
+        training_set = dict(list(data.items())[(len(data)//2)+10:])
+        testing_set = dict(list(data.items())[:(len(data)//2)-10])
+        esn_1.train_pseudoinverse(training_set)
+        esn_2.train_pseudoinverse(training_set)
+        axs[0].set_title("training")
+        axs[0].plot(list(training_set.values())[10:], label="target values")
+        axs[0].plot(esn_1.outputs, label=name_1)
+        axs[0].plot(esn_2.outputs, label=name_2)
+        esn_1.test(testing_set)
+        esn_2.test(testing_set)
+        axs[1].set_title("testing")
+        axs[1].plot(list(testing_set.values()), label="target values")
+        axs[1].plot(esn_1.outputs, label=name_1)
+        axs[1].plot(esn_2.outputs, label=name_2)
+        return 
+
+    def run_many(self, params, amount: int):
+        """
+        Run an ESN with the given params a certain number of times, and return the resulting NRMSEs.
+
+        params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
+
+        amount: number of times the ESN will be run.
+
+        returns the nrmses for the training and the testing sets.
+        """
+        training_nrmses = []
+        testing_nrmses = []
+        for _ in range(amount):
+            esn = TinyESN.TinyESN(*params)
+            narma = NARMA10.Narma10()
+            data = narma.create_training_set(500)
+            training_set = dict(list(data.items())[(len(data)//2)+10:])
+            testing_set = dict(list(data.items())[:(len(data)//2)-10])
+            esn.train_pseudoinverse(training_set)
+            training_nrmse = self.nrmse(list(training_set.values())[10:], esn.outputs)
+            esn.test(testing_set)
+            testing_nrmse = self.nrmse(list(testing_set.values()), esn.outputs)
+            training_nrmses.append(training_nrmse)
+            testing_nrmses.append(testing_nrmse)
+        return training_nrmses, testing_nrmses
+
