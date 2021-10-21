@@ -10,7 +10,7 @@ class TinyESN():
     Initialising, training, and testing the ESN are all supported.
     currently training is only done using the pseudoinverse method.
     """
-    def __init__(self, K: int, N: int, L: int, f=numpy.tanh, mode="discretised", feedback=False, topology="random", connectivity=0.1):
+    def __init__(self, K: int, N: int, L: int, f=numpy.tanh, mode="discretised", feedback=False, topology="random", connectivity=0.1, input_norm=True):
         """
         Initialise the ESN.
 
@@ -24,6 +24,7 @@ class TinyESN():
         connectivity (default 0.1): connectivity of the weight matrix (only relevant for the random topology).
         """
         #Matrix shapes are taken from [1]
+        self.input_norm = input_norm
         modes = ["discretised", "instantaneous"]
         if mode not in modes:
             raise ValueError("please set mode to discretised or instantaneous")
@@ -39,7 +40,8 @@ class TinyESN():
         self.u = numpy.random.rand(K, 1)
         self.x = numpy.zeros((N, 1), dtype=numpy.float32)
         self.v = numpy.zeros((L, 1), dtype=numpy.float32)
-        self.Wu = numpy.random.rand(N, K)
+        self.Wu = numpy.random.uniform(low=-1.0, high=1.0, size=N*K)
+        self.Wu = self.Wu.reshape((N, K)) #TODO: play around with this
         self.W = numpy.zeros((N, N), dtype=numpy.float32)
         self.Wv = numpy.random.rand(L, N)
         self.Wback = numpy.random.rand(N, L)
@@ -135,19 +137,25 @@ class TinyESN():
 
         From [2]: The torus topology is a special case of the latice where the perimetre nodes are connected to give periodic boundary conditions. Each node has nine adaptable weights in W.
         """
-        #TODO: test
-        if self.x.size % rows == 0:
-            raise ValueError("this would not let you form a grid")
-        cols = self.x.size / rows
+        if numpy.sqrt(self.x.size) != int(numpy.sqrt(self.x.size)):
+            raise ValueError("Can only form a torus if nodes can form a square.")
         s = self.x.size
-        placeholder = numpy.zeros(s, s)
-        for i in range(self.x.size):
-            bot = (i - rows)%s # this is ugly as fuck but is the best way i can think of doing it
-            top = (i + rows)%s
-            coordinates = [(i, i, i, i, i, i, i, i, i), 
-                            (bot-1, bot, bot+1, 
-                            (i-1)%s, i, i+1%s, 
-                            top-1, top, top+1)]
+        side = int(numpy.sqrt(s))
+        placeholder = numpy.zeros((s, s))
+        edge_big = lambda a, b, c: a if a<c else b
+        edge_small = lambda a, b, c: a if a>=c else b
+        col_count = 0
+        row_count = 1
+        for i in range(s):
+            if col_count == side and row_count!=5:
+                col_count = 0
+                row_count+=1
+            col_count+=1
+            #this awful (affectionate) piece of code is the moore neighbourhood for any given node i
+            #i pity the person to try and modify this to work as a rectangle (i am so sorry)
+            coordinates = [(i, (i+side)%s, ((i+1)%side), edge_big((i+1+side), i, min(s, (side*(row_count+1)))), edge_small(i-side, i, 0), edge_small(i-1, i, side*(row_count-1)), edge_small(i-side-1, i, max(0, side*(row_count-2))), edge_small(edge_big(i-side+1, i, side*(row_count-1)), i, 0), edge_big(edge_small(i+side-1, i, side*(row_count)),i,s)), (i, i, i, i, i, i, i, i, i)]
+            # print(edge_big(i-side+1, i, side*(row_count-1)))
+            print(coordinates)
             placeholder[tuple(coordinates)] = 1
         
         self.W = placeholder
@@ -161,12 +169,21 @@ class TinyESN():
 
     def has_echo_state(self):
         """Look at the values of the spectral radius and largest singular value to guess if the ESN has the echo state property[1]."""
+        eigen_vals = numpy.linalg.eig(self.W)
+        spectral_radius = max(eigen_vals)
+        #ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+        #?????????
+        single_vals = numpy.linalg.svd(self.W)
+        lsv = max(single_vals)
         #calculate spectral radius
         #check the "largest singular value"
-        return False
+        print(f"spectral radius: {spectral_radius}\nlargest singular value:{lsv}")
+        return lsv > 1 and spectral_radius < 1
 
     def _increment_timestep(self, data):
         """Increment timestep according to the protocol chosen in init."""
+        if self.input_norm:
+            data = numpy.tanh(data)
         if self.mode == "discretised" and self.feedback is True:
             self._increment_timestep_fb_discretised(data)
         elif self.mode == "discretised" and self.feedback is False:
@@ -218,9 +235,9 @@ class TinyESN():
         elif self.topology == "lattice":
             layout = g.layout_grid()
         elif self.topology == "torus":
-            layout = g.layout_sphere()
+            layout = g.layout_grid()
         else: 
-            layout = g.layout_kamada_kawai_3d()
+            layout = g.layout_kamada_kawai()
         igraph.plot(g, layout=layout)
         return
 
