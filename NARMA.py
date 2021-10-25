@@ -1,14 +1,17 @@
 """Creat a NARMA10 dataset"""
 import numpy
 
-class Narma10:
+class Narma:
+    #TODO: change this so it's just NARMA and it takes the size as an argument
     """Create a NARMA10 dataset."""
 
-    def __init__(self, mode="discretised"):
+    def __init__(self, dimension=10, mode="discretised"):
         """
         Initialise the dataset and set the mode.
+        dimension (default: 10): number of dimensions in the NARMA10 benchmark
         mode (default: "discretised"): whether the output will be acquired in an instantaneous or dicretised fashion.
         """
+        self.dimension = dimension
         self.y = 0
         self.timestep = 0
         self.history = {}
@@ -34,20 +37,20 @@ class Narma10:
         
         if len(self.history) == 0:
             r = 0
-            input_nine = 0
+            input_r = 0
             history_sum = 0
-        elif len(self.history) < 9:
+        elif len(self.history) < self.dimension-1:
             r = len(self.history)
-            input_nine = list(self.history.keys())[self.timestep - r]
+            input_r = list(self.history.keys())[self.timestep - r]
             for i in range(r):
                 history_sum += list(self.history.values())[(self.timestep-1)-i]
         else:
-            r = 9
-            input_nine = list(self.history.keys())[self.timestep - r]
+            r = self.dimension
+            input_r = list(self.history.keys())[self.timestep - r]
             for i in range(r-1):
                 history_sum += list(self.history.values())[(self.timestep-1)-i]
 
-        self.y = 0.3*self.y + (0.05*self.y)*history_sum + 1.5*input_nine*self.input + 0.1
+        self.y = 0.3*self.y + (0.05*self.y)*history_sum + 1.5*input_r*self.input + 0.1
         self.input = current_input
         self.history[self.input] = float(self.y)
         self.timestep += 1
@@ -60,20 +63,20 @@ class Narma10:
         self.input = current_input
         if len(self.history) == 0:
             r = 0
-            input_nine = 0
+            input_r = 0
             history_sum = 0
-        elif len(self.history) < 9:
+        elif len(self.history) < self.dimension-1:
             r = len(self.history)
-            input_nine = list(self.history.keys())[self.timestep - r]
+            input_r = list(self.history.keys())[self.timestep - r]
             for i in range(r):
                 history_sum += list(self.history.values())[(self.timestep-1)-i]
         else:
-            r = 9
-            input_nine = list(self.history.keys())[self.timestep - r]
+            r = self.dimension-1
+            input_r = list(self.history.keys())[self.timestep - r]
             for i in range(r-1):
                 history_sum += list(self.history.values())[(self.timestep-1)-i]
 
-        self.y = 0.3*self.y + (0.05*self.y)*history_sum + 1.5*input_nine*self.input + 0.1
+        self.y = 0.3*self.y + (0.05*self.y)*history_sum + 1.5*input_r*self.input + 0.1
 
         self.history[self.input] = float(self.y)
         self.timestep += 1

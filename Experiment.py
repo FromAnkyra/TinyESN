@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import TinyESN
-import NARMA10
+import NARMA
 
 class Experiment():
     """Define sample experiments that might be of use when testing an ESN."""
@@ -20,7 +20,8 @@ class Experiment():
                                 "input_norm": True}
         return
     
-    def nrmse(self, target_output_set, real_output_set):#any idea why this appears to converge to 1?
+    def nrmse(self, target_output_set, real_output_set):
+        #well _something_ is fucked here
         """Perform the normalised root mean squared error over the target and output sets."""
         if len(target_output_set) != len(real_output_set):
             raise ValueError(f"Found input variables with inconstitent numbers of samples [{len(target_output_set)}, {len(real_output_set)}]")
@@ -68,7 +69,7 @@ class Experiment():
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
         _, axs = plt.subplots(2)
-        narma = NARMA10.Narma10()
+        narma = NARMA.Narma(10, "discretised")
         data = narma.create_training_set(1000)
         esn = TinyESN.TinyESN(*params)
         training_set = dict(list(data.items())[(len(data)//2)+10:])
@@ -92,7 +93,7 @@ class Experiment():
         name_1, name2: name given to the ESNs
         """
         _, axs = plt.subplots(2)
-        narma = NARMA10.Narma10()
+        narma = NARMA.Narma(10, "discretised")
         data = narma.create_training_set(1000)
         esn_1 = TinyESN.TinyESN(*params_1)
         esn_2 = TinyESN.TinyESN(*params_2)
@@ -100,16 +101,18 @@ class Experiment():
         testing_set = dict(list(data.items())[:(len(data)//2)-10])
         esn_1.train_pseudoinverse(training_set)
         esn_2.train_pseudoinverse(training_set)
-        axs[0].set_title("training")
-        axs[0].plot(list(training_set.values())[10:], label="target values")
+        axs[0].set_title('training')
+        axs[0].plot(list(training_set.values())[10:], label='target values')
         axs[0].plot(esn_1.outputs, label=name_1)
         axs[0].plot(esn_2.outputs, label=name_2)
+        print(f"training:\n{name_1}: {self.nrmse(list(training_set.values())[10:], esn_1.outputs)}\n{name_2}: {self.nrmse(list(training_set.values())[10:], esn_2.outputs)}")
         esn_1.test(testing_set)
         esn_2.test(testing_set)
-        axs[1].set_title("testing")
-        axs[1].plot(list(testing_set.values()), label="target values")
+        axs[1].set_title('testing')
+        axs[1].plot(list(testing_set.values()), label='target values')
         axs[1].plot(esn_1.outputs, label=name_1)
         axs[1].plot(esn_2.outputs, label=name_2)
+        print(f"testing:\n{name_1}: {self.nrmse(list(testing_set.values()), esn_1.outputs)}\n{name_2}: {self.nrmse(list(testing_set.values()), esn_2.outputs)}")
         return 
 
     def run_many(self, params, amount: int):
@@ -126,8 +129,8 @@ class Experiment():
         testing_nrmses = []
         for _ in range(amount):
             esn = TinyESN.TinyESN(*params)
-            narma = NARMA10.Narma10()
-            data = narma.create_training_set(500)
+            narma = NARMA.Narma(10, "discretised")
+            data = narma.create_training_set(1000)
             training_set = dict(list(data.items())[(len(data)//2)+10:])
             testing_set = dict(list(data.items())[:(len(data)//2)-10])
             esn.train_pseudoinverse(training_set)
