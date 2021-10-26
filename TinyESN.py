@@ -147,15 +147,15 @@ class TinyESN():
         col_count = 0
         row_count = 1
         for i in range(s):
-            if col_count == side and row_count!=5:
+            if col_count == side and row_count!=side :
                 col_count = 0
                 row_count+=1
             col_count+=1
-            #this awful (affectionate) piece of code is the moore neighbourhood for any given node i
+            # you cannot hate me more than i hate myself
             #i pity the person to try and modify this to work as a rectangle (i am so sorry)
-            coordinates = [(i, (i+side)%s, ((i+1)%side), edge_big((i+1+side), i, min(s, (side*(row_count+1)))), edge_small(i-side, i, 0), edge_small(i-1, i, side*(row_count-1)), edge_small(i-side-1, i, max(0, side*(row_count-2))), edge_small(edge_big(i-side+1, i, side*(row_count-1)), i, 0), edge_big(edge_small(i+side-1, i, side*(row_count)),i,s)), (i, i, i, i, i, i, i, i, i)]
+            coordinates = [(i, (i+side)%s, edge_big(i+1, i-(side-1), row_count*side), int(edge_big((i+1+side), (i+1), ((row_count+1)*side)))%s, i-side, edge_small(i-1, (row_count*side)-1, side*(row_count-1)), edge_small(i-side-1, i-1, (row_count-2)*side), edge_big(i-side+1, (row_count-2)*side, side*(row_count-1)), edge_small(i+side-1, side*(row_count+1)-1, side*(row_count))%s), (i, i, i, i, i, i, i, i, i)]
             # print(edge_big(i-side+1, i, side*(row_count-1)))
-            print(coordinates)
+            # print(coordinates)
             placeholder[tuple(coordinates)] = 1
         
         self.W = placeholder
@@ -232,7 +232,7 @@ class TinyESN():
 
     def pretty_print(self):
         """Pretty print the reservoir."""
-        g = igraph.Graph.Weighted_Adjacency(self.W, loops=True)
+        g = igraph.Graph.Weighted_Adjacency(self.W, loops=False)
         if self.topology == "ring":
             layout = g.layout_circle()
         elif self.topology == "lattice":
