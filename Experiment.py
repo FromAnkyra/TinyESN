@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import TinyESN
-import NARMA10
+from timeseries import *
 
 class Experiment():
     """Define sample experiments that might be of use when testing an ESN."""
@@ -34,19 +34,19 @@ class Experiment():
         bottom = bottom/len(target_output_set)
         return float(numpy.sqrt(top/bottom))
 
-    def show_esn_nrmse(self, params):
+    def show_esn_nrmse(self, params, benchmark: TimeSeries):
         """
         Train a given ESN and makes a boxplot of the NRSMEs.
         
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
-        training, testing = self.run_many(*params, 500)
+        training, testing = self.run_many(params, 500, benchmark)
         data = [training, testing]
         plt.boxplot(data)
         plt.xticks([1, 2], ["training", "testing"])
         return
 
-    def compare_esn_nrmses(self, params_1, params_2, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_nrmses(self, params_1, params_2, benchmark: TimeSeries, name_1="esn 1", name_2="esn 2"):
         """
         Train two ESNs and make boxplots of the NMSREs.
         
@@ -54,22 +54,23 @@ class Experiment():
 
         name_1, name2: name given to the ESNs (to use when labelling boxplots)
         """
-        esn_1_training, esn_1_testing = self.run_many(params_1, 100)
-        esn_2_training, esn_2_testing = self.run_many(params_2, 100)
+        esn_1_training, esn_1_testing = self.run_many(params_1, 100, benchmark)
+        esn_2_training, esn_2_testing = self.run_many(params_2, 100, benchmark)
         data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
         plt.boxplot(data)
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
         return 
 
-    def show_esn_behaviour(self, params):
+    def show_esn_behaviour(self, params, benchmark: TimeSeries):
         """
         Plot the ESN outputs to the target NARMA10 outputs.
 
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
+
+        benchmark: instantiation of a benchmark against which to train the NMSRE, such as NARMA10. 
         """
         _, axs = plt.subplots(2)
-        narma = NARMA10.Narma10()
-        data = narma.create_training_set(1000)
+        data = benchmark.create_training_set(1000)
         esn = TinyESN.TinyESN(*params)
         training_set = dict(list(data.items())[(len(data)//2)+10:])
         testing_set = dict(list(data.items())[:(len(data)//2)-10])
@@ -83,7 +84,7 @@ class Experiment():
         axs[1].plot(esn.outputs)
         return 
 
-    def compare_esn_behaviour(self, params_1, params_2, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_behaviour(self, params_1, params_2, benchmark: TimeSeries, name_1="esn 1", name_2="esn 2"):
         """
         Plot the outputs of two different ESNs to the targert NARMA10 outputs.
         
@@ -92,8 +93,7 @@ class Experiment():
         name_1, name2: name given to the ESNs
         """
         _, axs = plt.subplots(2)
-        narma = NARMA10.Narma10()
-        data = narma.create_training_set(1000)
+        data = benchmark.create_training_set(1000)
         esn_1 = TinyESN.TinyESN(*params_1)
         esn_2 = TinyESN.TinyESN(*params_2)
         training_set = dict(list(data.items())[(len(data)//2)+10:])
@@ -112,7 +112,7 @@ class Experiment():
         axs[1].plot(esn_2.outputs, label=name_2)
         return 
 
-    def run_many(self, params, amount: int):
+    def run_many(self, params, amount: int, benchmark: TimeSeries):
         """
         Run an ESN with the given params a certain number of times, and return the resulting NRMSEs.
 
@@ -126,8 +126,7 @@ class Experiment():
         testing_nrmses = []
         for _ in range(amount):
             esn = TinyESN.TinyESN(*params)
-            narma = NARMA10.Narma10()
-            data = narma.create_training_set(500)
+            data = benchmark.create_training_set(500)
             training_set = dict(list(data.items())[(len(data)//2)+10:])
             testing_set = dict(list(data.items())[:(len(data)//2)-10])
             esn.train_pseudoinverse(training_set)
