@@ -92,3 +92,7 @@ class NARMA(TimeSeries):
             self.increment_timestep(self._generate_input()) 
         return self.history
 
+    def reset(self):
+        self.history = {}
+        self.timestep = 0
+        return

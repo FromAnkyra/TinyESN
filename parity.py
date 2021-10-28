@@ -14,3 +14,6 @@ class Parity(TimeSeries):
             training_set[keys[i]] = values[i]
         return training_set
 
+    def reset(self):
+        return
+

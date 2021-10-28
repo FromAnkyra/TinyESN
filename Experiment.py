@@ -40,6 +40,7 @@ class Experiment():
         
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
+        benchmark.reset()
         training, testing = self.run_many(params, 20, benchmark)
         data = [training, testing]
         plt.boxplot(data)
@@ -54,8 +55,9 @@ class Experiment():
 
         name_1, name2: name given to the ESNs (to use when labelling boxplots)
         """
-        esn_1_training, esn_1_testing = self.run_many(params_1, 20, benchmark)
-        esn_2_training, esn_2_testing = self.run_many(params_2, 20, benchmark)
+        benchmark.reset()
+        esn_1_training, esn_1_testing = self.run_many(params_1, 100, benchmark)
+        esn_2_training, esn_2_testing = self.run_many(params_2, 100, benchmark)
         data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
         plt.boxplot(data)
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
@@ -70,6 +72,7 @@ class Experiment():
         benchmark: instantiation of a benchmark against which to train the NMSRE, such as NARMA10. 
         """
         _, axs = plt.subplots(2)
+        benchmark.reset()
         data = benchmark.create_training_set(1000)
         esn = TinyESN.TinyESN(*params)
         training_set = dict(list(data.items())[(len(data)//2)+10:])
@@ -93,6 +96,7 @@ class Experiment():
         name_1, name2: name given to the ESNs
         """
         _, axs = plt.subplots(2)
+        benchmark.reset()
         data = benchmark.create_training_set(1000)
         esn_1 = TinyESN.TinyESN(*params_1)
         esn_2 = TinyESN.TinyESN(*params_2)
@@ -124,9 +128,9 @@ class Experiment():
         """
         training_nrmses = []
         testing_nrmses = []
-        for i in range(amount):
-            print(i)
+        for _ in range(amount):
             esn = TinyESN.TinyESN(*params)
+            benchmark.reset()
             data = benchmark.create_training_set(500)
             training_set = dict(list(data.items())[(len(data)//2)+10:])
             testing_set = dict(list(data.items())[:(len(data)//2)-10])
