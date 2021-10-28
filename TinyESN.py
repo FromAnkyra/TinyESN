@@ -194,7 +194,7 @@ class TinyESN():
             self._increment_timestep_no_fb_inst(data)
         return
 
-    def _increment_timestep_no_fb_inst(self, data):
+    def _increment_timestep_no_fb_inst(self, data): #todo: this is very broken lmao
         """Update the ESN state and outputs according to the instantaneous equation defined in [1]. Does not take feedback into account."""
         self.u = data
         self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
@@ -273,6 +273,8 @@ class TinyESN():
                 self.outputs = numpy.vstack((self.outputs, self.v))
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
                 self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)) #Note: the output matrix derived with this method gives a transposition of the weight matrix described in [1], hence the transposition here
+        del self.M_train
+        del self.D_train
         return
 
     def test(self, testing_set):

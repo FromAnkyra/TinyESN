@@ -40,7 +40,7 @@ class Experiment():
         
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
-        training, testing = self.run_many(params, 500, benchmark)
+        training, testing = self.run_many(params, 20, benchmark)
         data = [training, testing]
         plt.boxplot(data)
         plt.xticks([1, 2], ["training", "testing"])
@@ -54,8 +54,8 @@ class Experiment():
 
         name_1, name2: name given to the ESNs (to use when labelling boxplots)
         """
-        esn_1_training, esn_1_testing = self.run_many(params_1, 100, benchmark)
-        esn_2_training, esn_2_testing = self.run_many(params_2, 100, benchmark)
+        esn_1_training, esn_1_testing = self.run_many(params_1, 20, benchmark)
+        esn_2_training, esn_2_testing = self.run_many(params_2, 20, benchmark)
         data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
         plt.boxplot(data)
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
@@ -124,7 +124,8 @@ class Experiment():
         """
         training_nrmses = []
         testing_nrmses = []
-        for _ in range(amount):
+        for i in range(amount):
+            print(i)
             esn = TinyESN.TinyESN(*params)
             data = benchmark.create_training_set(500)
             training_set = dict(list(data.items())[(len(data)//2)+10:])
@@ -135,5 +136,6 @@ class Experiment():
             testing_nrmse = self.nrmse(list(testing_set.values()), esn.outputs)
             training_nrmses.append(training_nrmse)
             testing_nrmses.append(testing_nrmse)
+            del esn
         return training_nrmses, testing_nrmses
 
