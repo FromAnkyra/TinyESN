@@ -1,4 +1,4 @@
-"""Create a NARMA5 dataset"""
+"""Create a NARMA20 dataset"""
 import numpy
 from NARMA import NARMA
 
@@ -15,7 +15,7 @@ class Narma5(NARMA):
         self.alpha = 0.3
         self.beta = 0.05
         self.gamma = 1.5
-        self.delta = 0.2
-        self.N = 5
+        self.delta = 0.01
+        self.N = 20
         return
     
