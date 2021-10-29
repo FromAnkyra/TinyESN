@@ -41,13 +41,13 @@ class Experiment():
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
         benchmark.reset()
-        training, testing = self.run_many(params, 20, benchmark)
+        training, testing = self.run_many(params, 100, benchmark)
         data = [training, testing]
-        plt.boxplot(data)
+        plt.boxplot(data, showfliers=False)
         plt.xticks([1, 2], ["training", "testing"])
         return
 
-    def compare_esn_nrmses(self, params_1, params_2, benchmark: TimeSeries, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_nrmses(self, params_1, params_2, benchmark1: TimeSeries, benchmark2: TimeSeries, name_1="esn 1", name_2="esn 2"):
         """
         Train two ESNs and make boxplots of the NMSREs.
         
@@ -55,11 +55,12 @@ class Experiment():
 
         name_1, name2: name given to the ESNs (to use when labelling boxplots)
         """
-        benchmark.reset()
-        esn_1_training, esn_1_testing = self.run_many(params_1, 100, benchmark)
-        esn_2_training, esn_2_testing = self.run_many(params_2, 100, benchmark)
+        benchmark1.reset()
+        benchmark2.reset()
+        esn_1_training, esn_1_testing = self.run_many(params_1, 100, benchmark1)
+        esn_2_training, esn_2_testing = self.run_many(params_2, 100, benchmark2)
         data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
-        plt.boxplot(data)
+        plt.boxplot(data, showfliers=False)
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
         return 
 
@@ -75,8 +76,8 @@ class Experiment():
         benchmark.reset()
         data = benchmark.create_training_set(1000)
         esn = TinyESN.TinyESN(*params)
-        training_set = dict(list(data.items())[(len(data)//2)+10:])
-        testing_set = dict(list(data.items())[:(len(data)//2)-10])
+        training_set = dict(list(data.items())[(len(data)//2):])
+        testing_set = dict(list(data.items())[:(len(data)//2)])
         esn.train_pseudoinverse(training_set)
         axs[0].set_title("training")
         axs[0].plot(list(training_set.values())[10:])
@@ -87,7 +88,7 @@ class Experiment():
         axs[1].plot(esn.outputs)
         return 
 
-    def compare_esn_behaviour(self, params_1, params_2, benchmark: TimeSeries, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_behaviour(self, params_1, params_2, benchmark1: TimeSeries, benchmark2: TimeSeries, name_1="esn 1", name_2="esn 2"):
         """
         Plot the outputs of two different ESNs to the targert NARMA10 outputs.
         
@@ -96,22 +97,28 @@ class Experiment():
         name_1, name2: name given to the ESNs
         """
         _, axs = plt.subplots(2)
-        benchmark.reset()
-        data = benchmark.create_training_set(1000)
+        benchmark1.reset()
+        benchmark2.reset()
+        data1 = benchmark1.create_training_set(1000)
+        data2 = benchmark2.create_training_set(1000)
         esn_1 = TinyESN.TinyESN(*params_1)
         esn_2 = TinyESN.TinyESN(*params_2)
-        training_set = dict(list(data.items())[(len(data)//2)+10:])
-        testing_set = dict(list(data.items())[:(len(data)//2)-10])
-        esn_1.train_pseudoinverse(training_set)
-        esn_2.train_pseudoinverse(training_set)
+        training_set1 = dict(list(data1.items())[(len(data1)//2):])
+        testing_set1 = dict(list(data1.items())[:(len(data1)//2)])
+        training_set2 = dict(list(data1.items())[(len(data1)//2):])
+        testing_set2 = dict(list(data1.items())[:(len(data1)//2)])
+        esn_1.train_pseudoinverse(training_set1)
+        esn_2.train_pseudoinverse(training_set2)
         axs[0].set_title("training")
-        axs[0].plot(list(training_set.values())[10:], label="target values")
+        axs[0].plot(list(training_set1.values())[10:], label="target values 1")
+        axs[0].plot(list(training_set2.values())[10:], label="target values 2")
         axs[0].plot(esn_1.outputs, label=name_1)
         axs[0].plot(esn_2.outputs, label=name_2)
-        esn_1.test(testing_set)
-        esn_2.test(testing_set)
+        esn_1.test(testing_set1)
+        esn_2.test(testing_set2)
         axs[1].set_title("testing")
-        axs[1].plot(list(testing_set.values()), label="target values")
+        axs[1].plot(list(testing_set1.values()), label="target values 1")
+        axs[1].plot(list(testing_set2.values()), label="target values 2")
         axs[1].plot(esn_1.outputs, label=name_1)
         axs[1].plot(esn_2.outputs, label=name_2)
         return 
@@ -132,10 +139,10 @@ class Experiment():
             esn = TinyESN.TinyESN(*params)
             benchmark.reset()
             data = benchmark.create_training_set(500)
-            training_set = dict(list(data.items())[(len(data)//2)+10:])
-            testing_set = dict(list(data.items())[:(len(data)//2)-10])
+            training_set = dict(list(data.items())[(len(data)//2):])
+            testing_set = dict(list(data.items())[:(len(data)//2)])
             esn.train_pseudoinverse(training_set)
-            training_nrmse = self.nrmse(list(training_set.values())[10:], esn.outputs)
+            training_nrmse = self.nrmse(list(training_set.values())[10:], esn.outputs[:])
             esn.test(testing_set)
             testing_nrmse = self.nrmse(list(testing_set.values()), esn.outputs)
             training_nrmses.append(training_nrmse)

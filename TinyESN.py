@@ -266,6 +266,7 @@ class TinyESN():
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
                 self.Wv = numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)
             else:
+                # print(self.M_train.size)
                 y = self.x
                 y = numpy.transpose(y)
                 self.M_train = numpy.vstack((self.M_train, y))
@@ -281,6 +282,7 @@ class TinyESN():
 
         testing_set: Dict of testing values of form {input: target_output}.
         """
+        print(self.Wv)
         self._increment_timestep(list(testing_set.keys())[0])
         self.outputs = self.v
         for data in list(testing_set.keys())[1:]:
