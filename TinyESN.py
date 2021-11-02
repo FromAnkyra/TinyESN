@@ -52,9 +52,20 @@ class TinyESN():
         self.outputs = None
         self.timestep = None
         self._set_topology()
+        self._scale_weights()
         return
 
 
+    def _scale_weights(self):
+        """Scale weight matrix to get its spectral radius to 1"""
+        absolute = numpy.vectorize(lambda a: abs(a))
+        eigen_vals = numpy.linalg.eigvals(self.W)
+        spectral_radius = max(absolute(eigen_vals))
+        if spectral_radius not in eigen_vals:
+            spectral_radius = -spectral_radius
+        self.W = self.W * (1/spectral_radius)
+        return
+    
     def _set_topology(self):
         """Initialise the topology accoding to what is set in init."""
         if self.topology == "random":
@@ -169,10 +180,9 @@ class TinyESN():
 
     def has_echo_state(self):
         """Look at the values of the spectral radius and largest singular value to guess if the ESN has the echo state property[1]."""
-        eigen_vals = numpy.linalg.eig(self.W)
-        spectral_radius = max(eigen_vals)
-        #ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-        #?????????
+        absolute = numpy.vectorize(abs)
+        abs_eigen_vals = absolute(numpy.linalg.eig(self.W))
+        spectral_radius = max(abs_eigen_vals)
         single_vals = numpy.linalg.svd(self.W)
         lsv = max(single_vals)
         #calculate spectral radius
@@ -282,7 +292,7 @@ class TinyESN():
 
         testing_set: Dict of testing values of form {input: target_output}.
         """
-        print(self.Wv)
+        # print(self.Wv)
         self._increment_timestep(list(testing_set.keys())[0])
         self.outputs = self.v
         for data in list(testing_set.keys())[1:]:

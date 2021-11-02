@@ -47,11 +47,20 @@ e = Experiment()
 # with_scaling = (1, 30, 1, numpy.tanh, "discretised", False, "random", 0.1, True)
 # without_scaling = (1, 30, 1, numpy.tanh, "instantaneous", False, "random", 0.1, True)
 
-bigge = (1, 16, 1, numpy.tanh, "instantaneous", False, "lattice", 0.1, True)
-smol = (1, 4, 1, numpy.tanh, "discretised", False, "lattice", 0.1, True)
-n10 = Narma5()
-e.compare_esn_nrmses(bigge, smol, n10, "bigge", "smol")
+bigge = (1, 36, 1, numpy.tanh, "instantaneous", False, "random", 0.1, True)
+smol = (1, 36, 1, numpy.tanh, "instantaneous", False, "random", 0.1, False)
+n5d = Narma5()
+n5i = Narma5(mode="discretised")
+# plt.plot(list(n5i.create_training_set(50).keys()))
+# n5i.reset()
+# plt.plot(list(n5i.create_training_set(50).keys()))
+
+e.compare_esn_nrmses(bigge, smol, n5d, n5d, "scaled", "not_scaled")
 p = Parity()
-e.show_esn_behaviour(bigge, n10)
-e.show_esn_behaviour(bigge, p)
+e.show_esn_behaviour(bigge, n5d)
+e.show_esn_behaviour(smol, n5i)
 plt.show()
+
+# a = [0.2, 0.3, 0.4, 0.5, 0.4, 0.3, 0.2, 0.1, 0.2, 0.3, 0.4, 0.5]
+# b = [0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.2, 0.3, 0.4, 0.5, 0.6]
+# print(e.nrmse(a, b))
