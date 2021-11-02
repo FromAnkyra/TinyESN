@@ -1,8 +1,8 @@
 """Module for a very simple parity benchmark."""
-from timeseries import *
+from benchmark import *
 import numpy as np
 
-class Parity(TimeSeries):
+class Parity(BenchMark):
     """
     Very simple Parity benchmark.
     

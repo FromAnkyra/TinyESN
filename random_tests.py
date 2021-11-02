@@ -4,8 +4,9 @@ from Experiment import *
 from TinyESN import *
 from NARMA10 import *
 from NARMA5 import *
-from timeseries import *
+from benchmark import *
 from parity import *
+from sunspots import *
 
 # narma = NARMA.Narma()
 # data = narma.create_training_set(1000)
@@ -57,8 +58,9 @@ n5i = Narma5(mode="discretised")
 
 e.compare_esn_nrmses(bigge, smol, n5d, n5d, "scaled", "not_scaled")
 p = Parity()
-e.show_esn_behaviour(bigge, n5d)
-e.show_esn_behaviour(smol, n5i)
+s = SunSpots()
+e.show_esn_behaviour(bigge, s)
+e.show_esn_behaviour(smol, s)
 plt.show()
 
 # a = [0.2, 0.3, 0.4, 0.5, 0.4, 0.3, 0.2, 0.1, 0.2, 0.3, 0.4, 0.5]

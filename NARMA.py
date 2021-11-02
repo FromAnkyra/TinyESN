@@ -1,9 +1,9 @@
 """Abstract module for the various NARMA benchmarks."""
 from abc import abstractmethod
 import numpy
-from timeseries import TimeSeries
+from benchmark import BenchMark
 
-class NARMA(TimeSeries):
+class NARMA(BenchMark):
     """Abstract class for the NARMA benchmarks."""
 
     @abstractmethod

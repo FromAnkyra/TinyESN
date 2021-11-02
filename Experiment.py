@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import TinyESN
-from timeseries import *
+from benchmark import *
 
 class Experiment():
     """Define sample experiments that might be of use when testing an ESN."""
@@ -34,7 +34,7 @@ class Experiment():
         bottom = bottom/len(target_output_set)
         return float(numpy.sqrt(top/bottom))
 
-    def show_esn_nrmse(self, params, benchmark: TimeSeries):
+    def show_esn_nrmse(self, params, benchmark: BenchMark):
         """
         Train a given ESN and makes a boxplot of the NRSMEs.
         
@@ -47,7 +47,7 @@ class Experiment():
         plt.xticks([1, 2], ["training", "testing"])
         return
 
-    def compare_esn_nrmses(self, params_1, params_2, benchmark1: TimeSeries, benchmark2: TimeSeries, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_nrmses(self, params_1, params_2, benchmark1: BenchMark, benchmark2: BenchMark, name_1="esn 1", name_2="esn 2"):
         """
         Train two ESNs and make boxplots of the NMSREs.
         
@@ -64,7 +64,7 @@ class Experiment():
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
         return 
 
-    def show_esn_behaviour(self, params, benchmark: TimeSeries):
+    def show_esn_behaviour(self, params, benchmark: BenchMark):
         """
         Plot the ESN outputs to the target NARMA10 outputs.
 
@@ -88,7 +88,7 @@ class Experiment():
         axs[1].plot(esn.outputs)
         return 
 
-    def compare_esn_behaviour(self, params_1, params_2, benchmark1: TimeSeries, benchmark2: TimeSeries, name_1="esn 1", name_2="esn 2"):
+    def compare_esn_behaviour(self, params_1, params_2, benchmark1: BenchMark, benchmark2: BenchMark, name_1="esn 1", name_2="esn 2"):
         """
         Plot the outputs of two different ESNs to the targert NARMA10 outputs.
         
@@ -123,7 +123,7 @@ class Experiment():
         axs[1].plot(esn_2.outputs, label=name_2)
         return 
 
-    def run_many(self, params, amount: int, benchmark: TimeSeries):
+    def run_many(self, params, amount: int, benchmark: BenchMark):
         """
         Run an ESN with the given params a certain number of times, and return the resulting NRMSEs.
 
