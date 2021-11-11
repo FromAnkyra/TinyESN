@@ -2,11 +2,10 @@
 import matplotlib.pyplot as plt
 import numpy
 import TinyESN
-from benchmark import *
+from benchmark import BenchMark
 
 class Experiment():
-    """Define sample experiments that might be of use when testing an ESN."""
-   
+    """Define sample experiments that might be of use when testing an ESN.""" 
     def __init__(self):
         """Initialise the Experiment class."""
         self.default_params = {"K": 1,
@@ -18,7 +17,6 @@ class Experiment():
                                 "topology": "random",
                                 "connectivity": 0.1,
                                 "input_norm": True}
-        return
     
     def nrmse(self, target_output_set, real_output_set):#any idea why this appears to converge to 1?
         """Perform the normalised root mean squared error over the target and output sets."""
@@ -37,7 +35,7 @@ class Experiment():
     def show_esn_nrmse(self, params, benchmark: BenchMark):
         """
         Train a given ESN and makes a boxplot of the NRSMEs.
-        
+
         params: tuple of the parametres for the ESN to train. (Default param examples can be found in self.default_params).
         """
         benchmark.reset()
@@ -62,7 +60,7 @@ class Experiment():
         data = [esn_1_training, esn_1_testing, esn_2_training, esn_2_testing]
         plt.boxplot(data, showfliers=False)
         plt.xticks([1, 2, 3, 4], [name_1+" training", name_1+" testing", name_2+" training", name_2+" testing"])
-        return 
+        return
 
     def show_esn_behaviour(self, params, benchmark: BenchMark):
         """
@@ -86,7 +84,7 @@ class Experiment():
         axs[1].set_title("testing")
         axs[1].plot(list(testing_set.values()))
         axs[1].plot(esn.outputs)
-        return 
+        return
 
     def compare_esn_behaviour(self, params_1, params_2, benchmark1: BenchMark, benchmark2: BenchMark, name_1="esn 1", name_2="esn 2"):
         """
@@ -105,8 +103,8 @@ class Experiment():
         esn_2 = TinyESN.TinyESN(*params_2)
         training_set1 = dict(list(data1.items())[(len(data1)//2):])
         testing_set1 = dict(list(data1.items())[:(len(data1)//2)])
-        training_set2 = dict(list(data1.items())[(len(data1)//2):])
-        testing_set2 = dict(list(data1.items())[:(len(data1)//2)])
+        training_set2 = dict(list(data2.items())[(len(data1)//2):])
+        testing_set2 = dict(list(data2.items())[:(len(data1)//2)])
         esn_1.train_pseudoinverse(training_set1)
         esn_2.train_pseudoinverse(training_set2)
         axs[0].set_title("training")
@@ -121,7 +119,7 @@ class Experiment():
         axs[1].plot(list(testing_set2.values()), label="target values 2")
         axs[1].plot(esn_1.outputs, label=name_1)
         axs[1].plot(esn_2.outputs, label=name_2)
-        return 
+        return
 
     def run_many(self, params, amount: int, benchmark: BenchMark):
         """
@@ -149,4 +147,3 @@ class Experiment():
             testing_nrmses.append(testing_nrmse)
             del esn
         return training_nrmses, testing_nrmses
-

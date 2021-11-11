@@ -73,9 +73,9 @@ class TinyESN():
         elif self.topology == "ring":
             self._init_ring()
         elif self.topology == "lattice":
-            self._init_lattice() 
+            self._init_lattice()
         elif self.topology == "torus":
-            self._init_torus() 
+            self._init_torus()
         elif self.topology == "fully_connected":
             self._init_complete()
         return
