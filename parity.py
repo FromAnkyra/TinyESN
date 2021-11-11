@@ -1,6 +1,6 @@
 """Module for a very simple parity benchmark."""
 from benchmark import *
-import numpy as np
+import numpy 
 
 class Parity(BenchMark):
     """
@@ -16,8 +16,10 @@ class Parity(BenchMark):
     def create_training_set(self, size):
         """Create the training set for the benchmark."""
         keys = [i/size for i in range(size)]
-        keys = np.random.permutation(keys)
-        values = [int(keys[i]*size)%2 for i in range(size)]
+        keys = numpy.random.permutation(keys)
+        # index 0 shld be 0 if it is even, 0.5 if it is odd
+        # index 1 shld be 0.5 if it is even, 0 if it is odd
+        values = [numpy.array([(int(keys[i]*size)%2)/2, (~int(keys[i]*size)%2)/2]) for i in range(size)]
         training_set = {}
         for i in range(size):
             training_set[keys[i]] = values[i]
@@ -25,4 +27,3 @@ class Parity(BenchMark):
 
     def reset(self):
         return
-

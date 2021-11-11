@@ -99,6 +99,7 @@ class TinyESN():
         
         This imitates the topology of "delay-line reservoirs".
         """
+        #TODO: "sparsely connected ring"
         placeholder = numpy.zeros((self.x.size, self.x.size))
         for i in range(self.x.size):
             coordinates = [(i, i, i), ((i-1)%self.x.size, i, (i+1)%self.x.size)]
@@ -262,7 +263,10 @@ class TinyESN():
         
         Note: [4] describes this method as "it is expensive memory-wise for large design matrices [self.x]". That being said, given the scale of this ESN, it is perhaps the most straightforward option, as it is very simple to understand.
         """
-        #TODO: turn M into the correct shape
+        # make sure that the size of th
+
+        if list(training_set.values())[0].size != self.v.size:
+            raise ValueError(f"please make sure your ESN outputs match your training set: {list(training_set.values())[0].size}, {self.v.size}")
         for data in training_set:
             self._increment_timestep(data)
             if self.t <= 10:
@@ -271,10 +275,10 @@ class TinyESN():
                 self.M_train = self.x # note: here i am going by the assumption that numpy is doign assign by value, not by reference, which as far as I can tell is true
                 # print(f"M (pre-reshape): {self.M_train.shape}")
                 self.M_train = numpy.transpose(self.M_train)
-                self.D_train = numpy.array([training_set[data]])
+                self.D_train = numpy.ndarray(shape=self.v.shape, buffer=training_set[data]).T
                 self.outputs = self.v
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
-                self.Wv = numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)
+                self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train))
             else:
                 # print(self.M_train.size)
                 y = self.x
@@ -283,6 +287,7 @@ class TinyESN():
                 self.D_train = numpy.vstack((self.D_train, training_set[data]))
                 self.outputs = numpy.vstack((self.outputs, self.v))
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
+                # this is broken right here
                 self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train)) #Note: the output matrix derived with this method gives a transposition of the weight matrix described in [1], hence the transposition here
         return
 

@@ -1,4 +1,5 @@
 from benchmark import *
+import numpy
 """
 Take the santa fe laser time series dataset and turn it into a benchmark.
 
@@ -17,7 +18,7 @@ class SantaFe(BenchMark):
     def create_training_set(self, size):
         training_set = {}
         for i in range(len(self.data)-1):
-            training_set[self.data[i]] = self.data[i+1]
+            training_set[self.data[i]] = numpy.array([self.data[i+1]])
         return training_set
 
     def reset(self):

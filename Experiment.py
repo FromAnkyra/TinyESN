@@ -27,7 +27,7 @@ class Experiment():
         output_average = sum(target_output_set)/len(target_output_set)
         top = 0
         bottom = 0
-        for i in range(len(target_output_set)):
+        for i in range(1, len(target_output_set)):
             top += (target_output_set[i] - real_output_set[i])**2
             bottom += (target_output_set[i] - output_average)**2
         top = top/len(target_output_set)

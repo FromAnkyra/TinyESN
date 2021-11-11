@@ -53,7 +53,7 @@ class NARMA(BenchMark):
 
         self.y = self.alpha*self.y + (self.beta*self.y)*history_sum + self.gamma*input_N*self.input + self.delta
         self.input = current_input
-        self.history[self.input] = float(self.y)
+        self.history[self.input] = numpy.array([float(self.y)])
         self.timestep += 1
         return 
 
@@ -79,7 +79,7 @@ class NARMA(BenchMark):
 
         self.y = self.alpha*self.y + (self.beta*self.y)*history_sum + self.gamma*input_N*self.input + self.delta
 
-        self.history[self.input] = float(self.y)
+        self.history[self.input] = numpy.array([float(self.y)])
         self.timestep += 1
 
     def _generate_input(self):
