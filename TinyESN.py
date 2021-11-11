@@ -41,7 +41,7 @@ class TinyESN():
         self.x = numpy.zeros((N, 1), dtype=numpy.float32)
         self.v = numpy.zeros((L, 1), dtype=numpy.float32)
         self.Wu = numpy.random.uniform(low=-1.0, high=1.0, size=N*K)
-        self.Wu = self.Wu.reshape((N, K)) #TODO: play around with this
+        self.Wu = self.Wu.reshape((N, K)) 
         self.W = numpy.zeros((N, N), dtype=numpy.float32)
         self.Wv = numpy.random.rand(L, N)
         self.Wback = numpy.random.rand(N, L)
@@ -73,9 +73,9 @@ class TinyESN():
         elif self.topology == "ring":
             self._init_ring()
         elif self.topology == "lattice":
-            self._init_lattice() #TODO: this is mildly broken
+            self._init_lattice() 
         elif self.topology == "torus":
-            self._init_torus() #TODO: this is mildy broken
+            self._init_torus() 
         elif self.topology == "fully_connected":
             self._init_complete()
         return
@@ -99,12 +99,19 @@ class TinyESN():
         
         This imitates the topology of "delay-line reservoirs".
         """
-        #TODO: "sparsely connected ring"
+        # A "Sparsely connected ring" is a ring that has three connections per node, and that in addition has a few connections between other nodes
+        # It is perhaps a misnomer, as it has more connections than a ring
         placeholder = numpy.zeros((self.x.size, self.x.size))
         for i in range(self.x.size):
             coordinates = [(i, i, i), ((i-1)%self.x.size, i, (i+1)%self.x.size)]
             placeholder[tuple(coordinates)] = 1
-        self.W = placeholder
+        #the following only has an effect if the connectivity > 0, because otherwise no_of_additional_weights = 0
+        no_of_additional_weights = int(self.connectivity * (self.x.size**2))
+        weights = numpy.random.uniform(low=-1.0, high=1.0, size=no_of_additional_weights)
+        add_placeholder = numpy.append(numpy.zeros(self.x.size**2 - no_of_additional_weights), weights)
+        add_placeholder = numpy.random.permutation(placeholder).reshape((self.x.size, self.x.size))
+        
+        self.W = numpy.bitwise_or(placeholder, add_placeholder)
         return
     
     def _init_lattice(self):
