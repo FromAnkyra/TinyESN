@@ -101,16 +101,17 @@ class TinyESN():
         """
         # A "Sparsely connected ring" is a ring that has three connections per node, and that in addition has a few connections between other nodes
         # It is perhaps a misnomer, as it has more connections than a ring
-        placeholder = numpy.zeros((self.x.size, self.x.size))
+        placeholder = numpy.zeros((self.x.size, self.x.size), dtype=numpy.int8)
         for i in range(self.x.size):
             coordinates = [(i, i, i), ((i-1)%self.x.size, i, (i+1)%self.x.size)]
             placeholder[tuple(coordinates)] = 1
         #the following only has an effect if the connectivity > 0, because otherwise no_of_additional_weights = 0
         no_of_additional_weights = int(self.connectivity * (self.x.size**2))
-        weights = numpy.random.uniform(low=-1.0, high=1.0, size=no_of_additional_weights)
-        add_placeholder = numpy.append(numpy.zeros(self.x.size**2 - no_of_additional_weights), weights)
+        weights = numpy.ones(no_of_additional_weights, dtype=numpy.int8)
+        add_placeholder = numpy.append(numpy.zeros(self.x.size**2 - no_of_additional_weights, dtype=numpy.int8), weights)
         add_placeholder = numpy.random.permutation(placeholder).reshape((self.x.size, self.x.size))
-        
+        print(placeholder)
+        print(add_placeholder)
         self.W = numpy.bitwise_or(placeholder, add_placeholder)
         return
     
