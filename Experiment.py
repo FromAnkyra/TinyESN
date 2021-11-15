@@ -79,6 +79,7 @@ class Experiment():
         esn.train_pseudoinverse(training_set)
         axs[0].set_title("training")
         axs[0].plot(list(training_set.values())[10:])
+        # print(esn.outputs)
         axs[0].plot(esn.outputs)
         esn.test(testing_set)
         axs[1].set_title("testing")

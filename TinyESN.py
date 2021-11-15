@@ -200,8 +200,11 @@ class TinyESN():
 
     def _increment_timestep(self, data):
         """Increment timestep according to the protocol chosen in init."""
+
         if self.input_norm:
-            data = numpy.tanh(data)
+            v_tanh = numpy.vectorize(numpy.tanh)
+            data = v_tanh(data)
+        data = data.reshape(self.u.shape)
         if self.mode == "discretised" and self.feedback is True:
             self._increment_timestep_fb_discretised(data)
         elif self.mode == "discretised" and self.feedback is False:
@@ -216,7 +219,7 @@ class TinyESN():
         """Update the ESN state and outputs according to the instantaneous equation defined in [1]. Does not take feedback into account."""
         self.u = data
         self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
-        self.v = self.func(numpy.dot(self.Wv, self.x))  
+        self.v = self.func(numpy.dot(self.Wv, self.x))
         self.t += 1
         return
     
@@ -224,7 +227,7 @@ class TinyESN():
         """Update the ESN state and outputs according to the instantaneous equation defined in [1]. Takes feedback into account."""
         self.u = data
         self.x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u) + numpy.dot(self.Wback, self.v))
-        self.v = self.func(numpy.dot(self.x, self.Wv))  
+        self.v = self.func(numpy.dot(self.x, self.Wv))
         self.t += 1
         return
     
@@ -232,7 +235,7 @@ class TinyESN():
         """Update the ESN state and ouputs according to the discretised equation described in [3]. Does not take feedback into account."""
         new_x = self.func(numpy.dot(self.W, self.x) + numpy.dot(self.Wu, self.u)) 
         # print(f"Wv: {self.Wv.shape},\nx: {self.x.shape}")
-        self.v = self.func(numpy.dot(self.Wv, self.x))  
+        self.v = self.func(numpy.dot(self.Wv, self.x))
         self.x = new_x
         self.u = data
         self.t += 1
@@ -282,7 +285,7 @@ class TinyESN():
                 self.M_train = self.x # note: here i am going by the assumption that numpy is doign assign by value, not by reference, which as far as I can tell is true
                 # print(f"M (pre-reshape): {self.M_train.shape}")
                 self.M_train = numpy.transpose(self.M_train)
-                self.D_train = numpy.ndarray(shape=self.v.shape, buffer=training_set[data]).T
+                self.D_train = numpy.ndarray(shape=self.v.shape, buffer=training_set[data]).T #...what the fuck is this code even doing
                 self.outputs = self.v
                 # print(f"M = {self.M_train.shape},\n D={self.D_train.shape},\n M+={numpy.linalg.pinv(self.M_train).shape}")
                 self.Wv = numpy.transpose(numpy.dot(numpy.linalg.pinv(self.M_train), self.D_train))

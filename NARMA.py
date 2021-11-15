@@ -52,7 +52,7 @@ class NARMA(BenchMark):
                 history_sum += list(self.history.values())[(self.timestep-1)-i]
 
         self.y = self.alpha*self.y + (self.beta*self.y)*history_sum + self.gamma*input_N*self.input + self.delta
-        self.input = current_input
+        self.input = (current_input)
         self.history[self.input] = numpy.array([float(self.y)])
         self.timestep += 1
         return 
@@ -61,7 +61,7 @@ class NARMA(BenchMark):
         """Get the output for the current input in an instantaneous manner."""
         history_sum = 0
         r = 0
-        self.input = current_input
+        self.input = (current_input)
         if len(self.history) == 0:
             r = 0
             input_N = 0
@@ -93,7 +93,7 @@ class NARMA(BenchMark):
         size: size of the output set.
         """
         for _ in range(size):
-            self.increment_timestep(self._generate_input()) 
+            self.increment_timestep(self._generate_input())
         return self.history
 
     def reset(self):

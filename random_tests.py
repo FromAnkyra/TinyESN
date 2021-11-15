@@ -9,6 +9,7 @@ from parity import *
 from sunspots import *
 from mintemps import *
 from santafe import *
+from xor_benchmark import *
 
 # narma = NARMA.Narma()
 # data = narma.create_training_set(1000)
@@ -50,20 +51,22 @@ e = Experiment()
 # with_scaling = (1, 30, 1, numpy.tanh, "discretised", False, "random", 0.1, True)
 # without_scaling = (1, 30, 1, numpy.tanh, "instantaneous", False, "random", 0.1, True)
 
-bigge = (1, 100, 1, numpy.tanh, "instantaneous", False, "random", 0.1, True)
+bigge = (2, 100, 1, numpy.tanh, "instantaneous", False, "random", 0.1, True)
 smol = (1, 100, 1, numpy.tanh, "instantaneous", False, "random", 0.1, False)
 n5d = Narma5()
 n5i = Narma5(mode="discretised")
+x = Xor_benchmark()
 # plt.plot(list(n5i.create_training_set(50).keys()))
 # n5i.reset()
 # plt.plot(list(n5i.create_training_set(50).keys()))
 
-e.compare_esn_nrmses(bigge, smol, n5d, n5d, "scaled", "not_scaled")
-p = Parity()
-t = MinTemp()
-sf = SantaFe()
-e.show_esn_behaviour(bigge, n5i)
-e.show_esn_behaviour(smol, n5i)
+# e.compare_esn_nrmses(bigge, smol, n5d, n5d, "scaled", "not_scaled")
+# p = Parity()
+# t = MinTemp()
+# sf = SantaFe()
+# e.show_esn_behaviour(smol, n5i)
+e.show_esn_behaviour(bigge, x)
+
 plt.show()
 
 # a = [0.2, 0.3, 0.4, 0.5, 0.4, 0.3, 0.2, 0.1, 0.2, 0.3, 0.4, 0.5]
