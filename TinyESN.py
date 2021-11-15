@@ -204,7 +204,7 @@ class TinyESN():
         if self.input_norm:
             v_tanh = numpy.vectorize(numpy.tanh)
             data = v_tanh(data)
-        data = data.reshape(self.u.shape)
+        data = numpy.array([data]).reshape(self.u.shape)
         if self.mode == "discretised" and self.feedback is True:
             self._increment_timestep_fb_discretised(data)
         elif self.mode == "discretised" and self.feedback is False:
