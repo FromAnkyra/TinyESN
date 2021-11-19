@@ -57,9 +57,13 @@ class TinyESN():
 
 
     def _scale_weights(self):
-        """Scale weight matrix to get its spectral radius to 1"""
+        """
+        Scale weight matrix to get its spectral radius of the absolute weights to 1
+        
+        This assures the Echo State Property, as detailed in [5]
+        """
         absolute = numpy.vectorize(lambda a: abs(a))
-        eigen_vals = numpy.linalg.eigvals(self.W)
+        eigen_vals = numpy.linalg.eigvals(absolute(self.W))
         spectral_radius = max(absolute(eigen_vals))
         if spectral_radius not in eigen_vals:
             spectral_radius = -spectral_radius
@@ -328,4 +332,6 @@ Bibliography:
 [3] Stepney, Susan. n.d. “Non-Instantaneous Information Transfer in Physical Reservoir Computing.
 
 [4] Montavon, Grégoire, Geneviève B. Orr, and Klaus-Robert Müller, eds. 2012. Neural Networks: Tricks of the Trade: Second Edition. Springer, Berlin, Heidelberg.
+
+[5] Yildiz, Izzet B., Herbert Jaeger, and Stefan J. Kiebel. 2012. “Re-Visiting the Echo State Property.” Neural Networks: The Official Journal of the International Neural Network Society 35 (November): 1–9.
 """
